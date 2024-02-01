@@ -1,3 +1,21 @@
+/*
+ * PlotSquared, a land and world management plugin for Minecraft.
+ * Copyright (C) IntellectualSites <https://intellectualsites.com>
+ * Copyright (C) IntellectualSites team and contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.plotsquared.bukkit;
 
 import com.google.inject.Guice;
@@ -236,7 +254,7 @@ public final class BukkitPlatform extends JavaPlugin implements Listener, PlotPl
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecation") // Paper deprecation
     public void onEnable() {
         this.pluginName = getDescription().getName();
 
@@ -247,11 +265,13 @@ public final class BukkitPlatform extends JavaPlugin implements Listener, PlotPl
             timeConverter = new SpigotTimeConverter();
         }
 
+        // Stuff that needs to be created before the PlotSquared instance
         PlotPlayer.registerConverter(Player.class, BukkitUtil::adapt);
         TaskManager.setPlatformImplementation(new BukkitTaskManager(this, timeConverter));
 
         final PlotSquared plotSquared = new PlotSquared(this, "Bukkit");
 
+        // FastAsyncWorldEdit
         if (Settings.FAWE_Components.FAWE_HOOK) {
             Plugin fawe = getServer().getPluginManager().getPlugin("FastAsyncWorldEdit");
             if (fawe != null) {
@@ -299,13 +319,17 @@ public final class BukkitPlatform extends JavaPlugin implements Listener, PlotPl
             LOGGER.info("Couldn't verify purchase :(");
         }
 
+        // Database
         if (Settings.Enabled_Components.DATABASE) {
             plotSquared.setupDatabase();
         }
 
+        // Check if we need to convert old flag values, etc
         if (!plotSquared.getConfigurationVersion().equalsIgnoreCase("v5")) {
+            // Perform upgrade
             if (DBFunc.dbManager.convertFlags()) {
                 LOGGER.info("Flags were converted successfully!");
+                // Update the config version
                 try {
                     plotSquared.setConfigurationVersion("v5");
                 } catch (final Exception e) {
@@ -314,12 +338,16 @@ public final class BukkitPlatform extends JavaPlugin implements Listener, PlotPl
             }
         }
 
+        // Comments
         CommentManager.registerDefaultInboxes();
 
+        // Do stuff that was previously done in PlotSquared
+        // Kill entities
         if (Settings.Enabled_Components.KILL_ROAD_MOBS || Settings.Enabled_Components.KILL_ROAD_VEHICLES) {
             this.runEntityTask();
         }
 
+        // WorldEdit
         if (Settings.Enabled_Components.WORLDEDIT_RESTRICTIONS) {
             try {
                 WorldEdit.getInstance().getEventBus().register(this.injector().getInstance(WESubscriber.class));
