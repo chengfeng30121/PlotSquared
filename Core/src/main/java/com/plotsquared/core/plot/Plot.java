@@ -643,35 +643,22 @@ public class Plot {
     }
 
     /**
-     * Gets a immutable set of owner UUIDs for a plot (supports multi-owner mega-plots).
+     * Gets an immutable set of owner UUIDs for a plot (supports multi-owner mega-plots).
      * <p>
      * This method cannot be used to add or remove owners from a plot.
      * </p>
      *
-     * @return Immutable view of plot owners
+     * @return Immutable set of plot owners
      */
     public @NonNull Set<UUID> getOwners() {
-        if (this.getOwner() == null) {
-            return ImmutableSet.of();
-        }
-        if (isMerged()) {
-            Set<Plot> plots = getConnectedPlots();
-            Plot[] array = plots.toArray(new Plot[0]);
-            ImmutableSet.Builder<UUID> owners = ImmutableSet.builder();
-            UUID last = this.getOwner();
-            owners.add(this.getOwner());
-            for (final Plot current : array) {
-                if (current.getOwner() == null) {
-                    continue;
-                }
-                if (last == null || current.getOwner().getMostSignificantBits() != last.getMostSignificantBits()) {
-                    owners.add(current.getOwner());
-                    last = current.getOwner();
-                }
+        ImmutableSet.Builder<UUID> owners = ImmutableSet.builder();
+        for (Plot plot : getConnectedPlots()) {
+            UUID owner = plot.getOwner();
+            if (owner != null) {
+                owners.add(owner);
             }
-            return owners.build();
         }
-        return ImmutableSet.of(this.getOwner());
+        return owners.build();
     }
 
     /**
@@ -2195,6 +2182,9 @@ public class Plot {
      * @return if the given player can claim the plot
      */
     public boolean canClaim(@NonNull PlotPlayer<?> player) {
+        if (!WorldUtil.isValidLocation(getBottomAbs())) {
+            return false;
+        }
         PlotCluster cluster = this.getCluster();
         if (cluster != null) {
             if (!cluster.isAdded(player.getUUID()) && !player.hasPermission("plots.admin.command.claim")) {
@@ -2574,6 +2564,12 @@ public class Plot {
      */
     public void teleportPlayer(final PlotPlayer<?> player, TeleportCause cause, Consumer<Boolean> resultConsumer) {
         Plot plot = this.getBasePlot(false);
+        if ((getArea() == null || !(getArea() instanceof SinglePlotArea)) && !WorldUtil.isValidLocation(plot.getBottomAbs())) {
+            // prevent from teleporting into unsafe regions
+            player.sendMessage(TranslatableCaption.of("border.denied"));
+            resultConsumer.accept(false);
+            return;
+        }
 
         PlayerTeleportToPlotEvent event = this.eventDispatcher.callTeleport(player, player.getLocation(), plot, cause);
         if (event.getEventResult() == Result.DENY) {

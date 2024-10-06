@@ -32,6 +32,7 @@ import com.plotsquared.core.plot.PlotWeather;
 import com.plotsquared.core.plot.world.PlotAreaManager;
 import com.plotsquared.core.util.EventDispatcher;
 import com.plotsquared.core.util.MathMan;
+import com.plotsquared.core.util.WorldUtil;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.world.item.ItemType;
@@ -120,6 +121,9 @@ public class BukkitPlayer extends PlotPlayer<Player> {
 
     @Override
     public boolean canTeleport(final @NonNull Location location) {
+        if (!WorldUtil.isValidLocation(location)) {
+            return false;
+        }
         final org.bukkit.Location to = BukkitUtil.adapt(location);
         final org.bukkit.Location from = player.getLocation();
         PlayerTeleportEvent event = new PlayerTeleportEvent(player, from, to);
@@ -221,7 +225,7 @@ public class BukkitPlayer extends PlotPlayer<Player> {
 
     @Override
     public void teleport(final @NonNull Location location, final @NonNull TeleportCause cause) {
-        if (Math.abs(location.getX()) >= 30000000 || Math.abs(location.getZ()) >= 30000000) {
+        if (!WorldUtil.isValidLocation(location)) {
             return;
         }
         final org.bukkit.Location bukkitLocation =
@@ -322,7 +326,7 @@ public class BukkitPlayer extends PlotPlayer<Player> {
             return;
         }
         this.player.playSound(BukkitUtil.adapt(location), Sound.valueOf(BukkitAdapter.adapt(id).name()),
-                SoundCategory.MUSIC, 1f, 1f
+                SoundCategory.MUSIC, Float.MAX_VALUE, 1f
         );
     }
 

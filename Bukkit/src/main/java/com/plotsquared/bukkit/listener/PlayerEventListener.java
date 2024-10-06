@@ -61,6 +61,7 @@ import com.plotsquared.core.plot.flag.implementations.MiscInteractFlag;
 import com.plotsquared.core.plot.flag.implementations.PlayerInteractFlag;
 import com.plotsquared.core.plot.flag.implementations.PreventCreativeCopyFlag;
 import com.plotsquared.core.plot.flag.implementations.TamedInteractFlag;
+import com.plotsquared.core.plot.flag.implementations.TileDropFlag;
 import com.plotsquared.core.plot.flag.implementations.UntrustedVisitFlag;
 import com.plotsquared.core.plot.flag.implementations.VehicleBreakFlag;
 import com.plotsquared.core.plot.flag.implementations.VehicleUseFlag;
@@ -107,6 +108,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
@@ -199,11 +201,76 @@ public class PlayerEventListener implements Listener {
                 "GLOW_INK_SAC"
         ));
         int[] version = PlotSquared.platform().serverVersion();
-        if (version[1] >= 20 && version[2] >= 1) {
+        if (version[1] >= 20) {
             mutableDyes.add("HONEYCOMB");
         }
         DYES = Set.copyOf(mutableDyes);
     }
+
+    private static final Set<String> INTERACTABLE_MATERIALS;
+
+    static {
+        // @formatter:off
+        // "temporary" fix for https://hub.spigotmc.org/jira/browse/SPIGOT-7813
+        // can (and should) be removed when 1.21 support is dropped
+        // List of all interactable 1.21 materials
+        INTERACTABLE_MATERIALS = Material.CHEST.isInteractable() ? null :  Set.of(
+                "REDSTONE_ORE", "DEEPSLATE_REDSTONE_ORE", "CHISELED_BOOKSHELF", "DECORATED_POT", "CHEST", "CRAFTING_TABLE",
+                "FURNACE", "JUKEBOX", "OAK_FENCE", "SPRUCE_FENCE", "BIRCH_FENCE", "JUNGLE_FENCE", "ACACIA_FENCE", "CHERRY_FENCE",
+                "DARK_OAK_FENCE", "MANGROVE_FENCE", "BAMBOO_FENCE", "CRIMSON_FENCE", "WARPED_FENCE", "PUMPKIN",
+                "NETHER_BRICK_FENCE", "ENCHANTING_TABLE", "DRAGON_EGG", "ENDER_CHEST", "COMMAND_BLOCK", "BEACON", "ANVIL",
+                "CHIPPED_ANVIL", "DAMAGED_ANVIL", "LIGHT", "REPEATING_COMMAND_BLOCK", "CHAIN_COMMAND_BLOCK", "SHULKER_BOX",
+                "WHITE_SHULKER_BOX", "ORANGE_SHULKER_BOX", "MAGENTA_SHULKER_BOX", "LIGHT_BLUE_SHULKER_BOX", "YELLOW_SHULKER_BOX",
+                "LIME_SHULKER_BOX", "PINK_SHULKER_BOX", "GRAY_SHULKER_BOX", "LIGHT_GRAY_SHULKER_BOX", "CYAN_SHULKER_BOX",
+                "PURPLE_SHULKER_BOX", "BLUE_SHULKER_BOX", "BROWN_SHULKER_BOX", "GREEN_SHULKER_BOX", "RED_SHULKER_BOX",
+                "BLACK_SHULKER_BOX", "REPEATER", "COMPARATOR", "HOPPER", "DISPENSER", "DROPPER", "LECTERN", "LEVER",
+                "DAYLIGHT_DETECTOR", "TRAPPED_CHEST", "TNT", "NOTE_BLOCK", "STONE_BUTTON", "POLISHED_BLACKSTONE_BUTTON",
+                "OAK_BUTTON", "SPRUCE_BUTTON", "BIRCH_BUTTON", "JUNGLE_BUTTON", "ACACIA_BUTTON", "CHERRY_BUTTON",
+                "DARK_OAK_BUTTON", "MANGROVE_BUTTON", "BAMBOO_BUTTON", "CRIMSON_BUTTON", "WARPED_BUTTON", "IRON_DOOR", "OAK_DOOR",
+                "SPRUCE_DOOR", "BIRCH_DOOR", "JUNGLE_DOOR", "ACACIA_DOOR", "CHERRY_DOOR", "DARK_OAK_DOOR", "MANGROVE_DOOR",
+                "BAMBOO_DOOR", "CRIMSON_DOOR", "WARPED_DOOR", "COPPER_DOOR", "EXPOSED_COPPER_DOOR", "WEATHERED_COPPER_DOOR",
+                "OXIDIZED_COPPER_DOOR", "WAXED_COPPER_DOOR", "WAXED_EXPOSED_COPPER_DOOR", "WAXED_WEATHERED_COPPER_DOOR",
+                "WAXED_OXIDIZED_COPPER_DOOR", "IRON_TRAPDOOR", "OAK_TRAPDOOR", "SPRUCE_TRAPDOOR", "BIRCH_TRAPDOOR",
+                "JUNGLE_TRAPDOOR", "ACACIA_TRAPDOOR", "CHERRY_TRAPDOOR", "DARK_OAK_TRAPDOOR", "MANGROVE_TRAPDOOR",
+                "BAMBOO_TRAPDOOR", "CRIMSON_TRAPDOOR", "WARPED_TRAPDOOR", "COPPER_TRAPDOOR", "EXPOSED_COPPER_TRAPDOOR",
+                "WEATHERED_COPPER_TRAPDOOR", "OXIDIZED_COPPER_TRAPDOOR", "WAXED_COPPER_TRAPDOOR", "WAXED_EXPOSED_COPPER_TRAPDOOR",
+                "WAXED_WEATHERED_COPPER_TRAPDOOR", "WAXED_OXIDIZED_COPPER_TRAPDOOR", "OAK_FENCE_GATE", "SPRUCE_FENCE_GATE",
+                "BIRCH_FENCE_GATE", "JUNGLE_FENCE_GATE", "ACACIA_FENCE_GATE", "CHERRY_FENCE_GATE", "DARK_OAK_FENCE_GATE",
+                "MANGROVE_FENCE_GATE", "BAMBOO_FENCE_GATE", "CRIMSON_FENCE_GATE", "WARPED_FENCE_GATE", "STRUCTURE_BLOCK",
+                "JIGSAW", "OAK_SIGN", "SPRUCE_SIGN", "BIRCH_SIGN", "JUNGLE_SIGN", "ACACIA_SIGN", "CHERRY_SIGN", "DARK_OAK_SIGN",
+                "MANGROVE_SIGN", "BAMBOO_SIGN", "CRIMSON_SIGN", "WARPED_SIGN", "OAK_HANGING_SIGN", "SPRUCE_HANGING_SIGN",
+                "BIRCH_HANGING_SIGN", "JUNGLE_HANGING_SIGN", "ACACIA_HANGING_SIGN", "CHERRY_HANGING_SIGN",
+                "DARK_OAK_HANGING_SIGN", "MANGROVE_HANGING_SIGN", "BAMBOO_HANGING_SIGN", "CRIMSON_HANGING_SIGN",
+                "WARPED_HANGING_SIGN", "CAKE", "WHITE_BED", "ORANGE_BED", "MAGENTA_BED", "LIGHT_BLUE_BED", "YELLOW_BED",
+                "LIME_BED", "PINK_BED", "GRAY_BED", "LIGHT_GRAY_BED", "CYAN_BED", "PURPLE_BED", "BLUE_BED", "BROWN_BED",
+                "GREEN_BED", "RED_BED", "BLACK_BED", "CRAFTER", "BREWING_STAND", "CAULDRON", "FLOWER_POT", "LOOM", "COMPOSTER",
+                "BARREL", "SMOKER", "BLAST_FURNACE", "CARTOGRAPHY_TABLE", "FLETCHING_TABLE", "GRINDSTONE", "SMITHING_TABLE",
+                "STONECUTTER", "BELL", "CAMPFIRE", "SOUL_CAMPFIRE", "BEE_NEST", "BEEHIVE", "RESPAWN_ANCHOR", "CANDLE",
+                "WHITE_CANDLE", "ORANGE_CANDLE", "MAGENTA_CANDLE", "LIGHT_BLUE_CANDLE", "YELLOW_CANDLE", "LIME_CANDLE",
+                "PINK_CANDLE", "GRAY_CANDLE", "LIGHT_GRAY_CANDLE", "CYAN_CANDLE", "PURPLE_CANDLE", "BLUE_CANDLE", "BROWN_CANDLE",
+                "GREEN_CANDLE", "RED_CANDLE", "BLACK_CANDLE", "VAULT", "MOVING_PISTON", "REDSTONE_WIRE", "OAK_WALL_SIGN",
+                "SPRUCE_WALL_SIGN", "BIRCH_WALL_SIGN", "ACACIA_WALL_SIGN", "CHERRY_WALL_SIGN", "JUNGLE_WALL_SIGN",
+                "DARK_OAK_WALL_SIGN", "MANGROVE_WALL_SIGN", "BAMBOO_WALL_SIGN", "OAK_WALL_HANGING_SIGN",
+                "SPRUCE_WALL_HANGING_SIGN", "BIRCH_WALL_HANGING_SIGN", "ACACIA_WALL_HANGING_SIGN",
+                "CHERRY_WALL_HANGING_SIGN", "JUNGLE_WALL_HANGING_SIGN", "DARK_OAK_WALL_HANGING_SIGN",
+                "MANGROVE_WALL_HANGING_SIGN", "CRIMSON_WALL_HANGING_SIGN", "WARPED_WALL_HANGING_SIGN", "BAMBOO_WALL_HANGING_SIGN",
+                "WATER_CAULDRON", "LAVA_CAULDRON", "POWDER_SNOW_CAULDRON", "POTTED_TORCHFLOWER", "POTTED_OAK_SAPLING",
+                "POTTED_SPRUCE_SAPLING", "POTTED_BIRCH_SAPLING", "POTTED_JUNGLE_SAPLING", "POTTED_ACACIA_SAPLING",
+                "POTTED_CHERRY_SAPLING", "POTTED_DARK_OAK_SAPLING", "POTTED_MANGROVE_PROPAGULE", "POTTED_FERN",
+                "POTTED_DANDELION", "POTTED_POPPY", "POTTED_BLUE_ORCHID", "POTTED_ALLIUM", "POTTED_AZURE_BLUET",
+                "POTTED_RED_TULIP", "POTTED_ORANGE_TULIP", "POTTED_WHITE_TULIP", "POTTED_PINK_TULIP", "POTTED_OXEYE_DAISY",
+                "POTTED_CORNFLOWER", "POTTED_LILY_OF_THE_VALLEY", "POTTED_WITHER_ROSE", "POTTED_RED_MUSHROOM",
+                "POTTED_BROWN_MUSHROOM", "POTTED_DEAD_BUSH", "POTTED_CACTUS", "POTTED_BAMBOO", "SWEET_BERRY_BUSH",
+                "CRIMSON_WALL_SIGN", "WARPED_WALL_SIGN", "POTTED_CRIMSON_FUNGUS", "POTTED_WARPED_FUNGUS", "POTTED_CRIMSON_ROOTS",
+                "POTTED_WARPED_ROOTS", "CANDLE_CAKE", "WHITE_CANDLE_CAKE", "ORANGE_CANDLE_CAKE", "MAGENTA_CANDLE_CAKE",
+                "LIGHT_BLUE_CANDLE_CAKE", "YELLOW_CANDLE_CAKE", "LIME_CANDLE_CAKE", "PINK_CANDLE_CAKE", "GRAY_CANDLE_CAKE",
+                "LIGHT_GRAY_CANDLE_CAKE", "CYAN_CANDLE_CAKE", "PURPLE_CANDLE_CAKE", "BLUE_CANDLE_CAKE", "BROWN_CANDLE_CAKE",
+                "GREEN_CANDLE_CAKE", "RED_CANDLE_CAKE", "BLACK_CANDLE_CAKE", "CAVE_VINES", "CAVE_VINES_PLANT",
+                "POTTED_AZALEA_BUSH", "POTTED_FLOWERING_AZALEA_BUSH"
+        );
+        // @formatter:on
+    }
+
     private final EventDispatcher eventDispatcher;
     private final WorldEdit worldEdit;
     private final PlotAreaManager plotAreaManager;
@@ -234,6 +301,19 @@ public class PlayerEventListener implements Listener {
         this.worldEdit = worldEdit;
         this.plotAreaManager = plotAreaManager;
         this.plotListener = plotListener;
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    public void onBlockBreak(final BlockBreakEvent event) {
+        Location location = BukkitUtil.adapt(event.getBlock().getLocation());
+        PlotArea area = location.getPlotArea();
+        if (area == null) {
+            return;
+        }
+        Plot plot = area.getPlot(location);
+        if (plot != null) {
+            event.setDropItems(plot.getFlag(TileDropFlag.class));
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -518,9 +598,9 @@ public class PlayerEventListener implements Listener {
                     // to is identical to the plot's home location, and untrusted-visit is true
                     // i.e. untrusted-visit can override deny-teleport
                     // this is acceptable, because otherwise it wouldn't make sense to have both flags set
-                    if (!result && !(plot.getFlag(UntrustedVisitFlag.class) && plot
-                            .getHomeSynchronous()
-                            .equals(BukkitUtil.adaptComplete(to)))) {
+                    if (result || (plot.getFlag(UntrustedVisitFlag.class) && plot.getHomeSynchronous().equals(BukkitUtil.adaptComplete(to)))) {
+                        plotListener.plotEntry(pp, plot);
+                    } else {
                         pp.sendMessage(
                                 TranslatableCaption.of("deny.no_enter"),
                                 TagResolver.resolver("plot", Tag.inserting(Component.text(plot.toString())))
@@ -531,6 +611,19 @@ public class PlayerEventListener implements Listener {
             }
         }
         playerMove(event);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onWorldChanged(PlayerChangedWorldEvent event) {
+        Player player = event.getPlayer();
+        BukkitPlayer pp = BukkitUtil.adapt(player);
+        if (this.worldEdit != null) {
+            if (!pp.hasPermission(Permission.PERMISSION_WORLDEDIT_BYPASS)) {
+                if (pp.getAttribute("worldedit")) {
+                    pp.removeAttribute("worldedit");
+                }
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -872,40 +965,6 @@ public class PlayerEventListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onWorldChanged(PlayerChangedWorldEvent event) {
-        Player player = event.getPlayer();
-        BukkitPlayer pp = BukkitUtil.adapt(player);
-        // Delete last location
-        Plot plot;
-        try (final MetaDataAccess<Plot> lastPlotAccess =
-                     pp.accessTemporaryMetaData(PlayerMetaDataKeys.TEMPORARY_LAST_PLOT)) {
-            plot = lastPlotAccess.remove();
-        }
-        try (final MetaDataAccess<Location> lastLocationAccess =
-                     pp.accessTemporaryMetaData(PlayerMetaDataKeys.TEMPORARY_LOCATION)) {
-            lastLocationAccess.remove();
-        }
-        if (plot != null) {
-            plotListener.plotExit(pp, plot);
-        }
-        if (this.worldEdit != null) {
-            if (!pp.hasPermission(Permission.PERMISSION_WORLDEDIT_BYPASS)) {
-                if (pp.getAttribute("worldedit")) {
-                    pp.removeAttribute("worldedit");
-                }
-            }
-        }
-        Location location = pp.getLocation();
-        PlotArea area = location.getPlotArea();
-        if (location.isPlotArea()) {
-            plot = location.getPlot();
-            if (plot != null) {
-                plotListener.plotEntry(pp, plot);
-            }
-        }
-    }
-
     @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
@@ -1193,7 +1252,7 @@ public class PlayerEventListener implements Listener {
                 eventType = PlayerBlockEventType.INTERACT_BLOCK;
                 blocktype1 = BukkitAdapter.asBlockType(block.getType());
 
-                if (blockType.isInteractable()) {
+                if (INTERACTABLE_MATERIALS != null ? INTERACTABLE_MATERIALS.contains(blockType.name()) : blockType.isInteractable()) {
                     if (!player.isSneaking()) {
                         break;
                     }
@@ -1921,7 +1980,9 @@ public class PlayerEventListener implements Listener {
 
     @EventHandler
     public void onPlayerTakeLecternBook(PlayerTakeLecternBookEvent event) {
-        Location location = BukkitUtil.adapt(event.getPlayer().getLocation());
+        Player player = event.getPlayer();
+        BukkitPlayer pp = BukkitUtil.adapt(player);
+        Location location = pp.getLocation();
         PlotArea area = location.getPlotArea();
         if (area == null) {
             return;
@@ -1933,9 +1994,11 @@ public class PlayerEventListener implements Listener {
             }
             return;
         }
-        if (plot.getFlag(LecternReadBookFlag.class)) {
-            plot.debug(event.getPlayer().getName() + " could not take the book because of lectern-read-book = true");
-            event.setCancelled(true);
+        if (!plot.isAdded(pp.getUUID())) {
+            if (plot.getFlag(LecternReadBookFlag.class)) {
+                plot.debug(event.getPlayer().getName() + " could not take the book because of lectern-read-book = true");
+                event.setCancelled(true);
+            }
         }
     }
 

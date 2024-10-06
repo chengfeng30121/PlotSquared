@@ -16,21 +16,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.plotsquared.core.events;
+package com.plotsquared.core.plot.flag.implementations;
 
-import com.plotsquared.core.player.PlotPlayer;
-import com.plotsquared.core.plot.Plot;
+import com.plotsquared.core.configuration.caption.TranslatableCaption;
+import com.plotsquared.core.plot.flag.types.BooleanFlag;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-public class PlayerEnterPlotEvent extends PlotPlayerEvent {
+/**
+ * @since 7.3.7
+ */
 
-    /**
-     * PlayerEnterPlotEvent: Called when a player enters a plot
-     *
-     * @param player Player that entered the plot
-     * @param plot   Plot that was entered
-     */
-    public PlayerEnterPlotEvent(PlotPlayer<?> player, Plot plot) {
-        super(player, plot);
+public class TileDropFlag extends BooleanFlag<TileDropFlag> {
+
+    public static final TileDropFlag TILE_DROP_TRUE = new TileDropFlag(true);
+    public static final TileDropFlag TILE_DROP_FALSE = new TileDropFlag(false);
+
+    private TileDropFlag(boolean value) {
+        super(value, TranslatableCaption.of("flags.flag_description_tile_drop"));
+    }
+
+    @Override
+    protected TileDropFlag flagOf(@NonNull Boolean value) {
+        return value ? TILE_DROP_TRUE : TILE_DROP_FALSE;
     }
 
 }

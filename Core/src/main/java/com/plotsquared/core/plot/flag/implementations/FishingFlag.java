@@ -16,21 +16,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.plotsquared.core.events;
+package com.plotsquared.core.plot.flag.implementations;
 
-import com.plotsquared.core.player.PlotPlayer;
-import com.plotsquared.core.plot.Plot;
+import com.plotsquared.core.configuration.caption.TranslatableCaption;
+import com.plotsquared.core.plot.flag.types.BooleanFlag;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-public class PlayerEnterPlotEvent extends PlotPlayerEvent {
+public class FishingFlag extends BooleanFlag<FishingFlag> {
 
-    /**
-     * PlayerEnterPlotEvent: Called when a player enters a plot
-     *
-     * @param player Player that entered the plot
-     * @param plot   Plot that was entered
-     */
-    public PlayerEnterPlotEvent(PlotPlayer<?> player, Plot plot) {
-        super(player, plot);
+    public static final FishingFlag FISHING_TRUE = new FishingFlag(true);
+    public static final FishingFlag FISHING_FALSE = new FishingFlag(false);
+
+    private FishingFlag(boolean value) {
+        super(value, TranslatableCaption.of("flags.flag_description_fishing"));
+    }
+
+    @Override
+    protected FishingFlag flagOf(@NonNull final Boolean value) {
+        return value ? FISHING_TRUE : FISHING_FALSE;
     }
 
 }

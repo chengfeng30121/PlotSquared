@@ -17,5 +17,5 @@ jobs:
           ./gradlew build
       - uses: actions/upload-artifact@v3
         with:
-          name: Release
+          name: Release 7.3.12-SNAPSHOT
           path: '*'

@@ -679,10 +679,8 @@ public abstract class PlotArea implements ComponentLike {
                     TranslatableCaption.of("height.height_limit"),
                     TagResolver.builder()
                             .tag("minheight", Tag.inserting(Component.text(minBuildHeight)))
-                            .tag(
-                                    "maxheight",
-                                    Tag.inserting(Component.text(maxBuildHeight))
-                            ).build()
+                            .tag("maxheight", Tag.inserting(Component.text(maxBuildHeight)))
+                            .build()
             );
             // Return true if "failed" as the method will always be inverted otherwise
             return true;
@@ -1450,6 +1448,24 @@ public abstract class PlotArea implements ComponentLike {
 
     protected void setDefaultHome(BlockLoc defaultHome) {
         this.defaultHome = defaultHome;
+    }
+
+    /**
+     * Get the maximum height that changes to plot components (wall filling, air, all etc.) may operate to
+     *
+     * @since 7.3.4
+     */
+    public int getMaxComponentHeight() {
+        return this.maxBuildHeight;
+    }
+
+    /**
+     * Get the minimum height that changes to plot components (wall filling, air, all etc.) may operate to
+     *
+     * @since 7.3.4
+     */
+    public int getMinComponentHeight() {
+        return this.minBuildHeight;
     }
 
     /**
